@@ -13,32 +13,24 @@ public class Database {
     private static final String DB_USER = "";
     private static final String DB_PASSWORD = "";
 
-    private static final String CREATE_COUNTRY_QUERY = "CREATE TABLE COUNTRY(id int primary key, name varchar(255))";
-    private static final String CREATE_CITY_QUERY = "CREATE TABLE CITY(id int primary key, name varchar(255), country_id int, FOREIGN KEY (country_id) REFERENCES Country(id), avg_population int)";
+    private static final String CREATE_COUNTRY_QUERY = "CREATE TABLE COUNTRY(id int default countrySeq.nextval primary key, name varchar(255) NOT NULL UNIQUE)";
+    private static final String CREATE_CITY_QUERY = "CREATE TABLE CITY(id int default citySeq.nextval primary key, name varchar(255) NOT NULL UNIQUE, country_id int, FOREIGN KEY (country_id) REFERENCES Country(id), avg_population int)";
 
     private static final String COUNTRY_SEQ = "CREATE SEQUENCE IF NOT EXISTS countrySeq START WITH 1 INCREMENT BY 1";
     private static final String CITY_SEQ = "CREATE SEQUENCE IF NOT EXISTS citySeq START WITH 1 INCREMENT BY 1";
 
-    private static final String[] INSERT_COUNTRY_QUERIES =
-            {"INSERT INTO COUNTRY (id, name) VALUES (countrySeq.nextval, 'PL')",
-                    "INSERT INTO COUNTRY (id, name) VALUES (countrySeq.nextval, 'UK')",
-                    "INSERT INTO COUNTRY (id, name) VALUES (countrySeq.nextval, 'FR')"};
+    private static final String INSERT_COUNTRY_QUERY = "INSERT INTO COUNTRY (name) VALUES (?)";
 
-    private static final String[] INSERT_CITY_QUERIES =
-            {"INSERT INTO CITY (id, name, country_id, avg_population) VALUES (citySeq.nextval, 'Warsaw', 1, 1600000)",
-                    "INSERT INTO CITY (id, name, country_id, avg_population) VALUES (citySeq.nextval, 'Poznan', 1, 600000)",
-                    "INSERT INTO CITY (id, name, country_id, avg_population) VALUES (citySeq.nextval, 'Krakow', 1, 750000)",
-                    "INSERT INTO CITY (id, name, country_id, avg_population) VALUES (citySeq.nextval, 'London', 2, 8000000)",
-                    "INSERT INTO CITY (id, name, country_id, avg_population) VALUES (citySeq.nextval, 'Liverpool', 2, 550000)",
-                    "INSERT INTO CITY (id, name, country_id, avg_population) VALUES (citySeq.nextval, 'Paris', 3, 2000000)"};
+
+    private static final String INSERT_CITY_QUERY = "INSERT INTO CITY (name, country_id, avg_population) VALUES (?, ? , ?)";
 
 
     public static Optional<Connection> prepareDatabase() {
         Connection connection = null;
         try {
             connection = getDatabaseConnection();
-            createTables(connection);
             createSequences(connection);
+            createTables(connection);
             insertCountries(connection);
             insertCities(connection);
         } catch (SQLException e) {
@@ -76,12 +68,6 @@ public class Database {
         executeUpdate(connection, CITY_SEQ);
     }
 
-    private static void executeUpdate(Connection connection, String[] queries) {
-        for (String query : queries) {
-            executeUpdate(connection, query);
-        }
-    }
-
     private static void executeUpdate(Connection connection, String query) {
         PreparedStatement preparedStatement;
         try {
@@ -94,11 +80,45 @@ public class Database {
     }
 
     private static void insertCountries(Connection connection) {
-        executeUpdate(connection, INSERT_COUNTRY_QUERIES);
+        createCountry(connection, "PL");
+        createCountry(connection, "UK");
+        createCountry(connection, "FR");
+    }
+
+    private static void createCountry(Connection connection, String countryName) {
+        PreparedStatement preparedStatement = null;
+        try {
+            preparedStatement = connection.prepareStatement(INSERT_COUNTRY_QUERY);
+            preparedStatement.setString(1, countryName);
+            preparedStatement.executeUpdate();
+            preparedStatement.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     private static void insertCities(Connection connection) {
-        executeUpdate(connection, INSERT_CITY_QUERIES);
+        createCity(connection,"Warsaw", 1, 1600000);
+        createCity(connection, "Poznan", 1, 600000);
+        createCity(connection, "Krakow", 1, 750000);
+        createCity(connection, "London", 2, 8000000);
+        createCity(connection, "Liverpool", 2, 550000);
+        createCity(connection, "Paris", 3, 2000000);
     }
+
+    private static void createCity(Connection connection, String cityName, int countryId, int avgPopulation) {
+        PreparedStatement preparedStatement = null;
+        try {
+            preparedStatement = connection.prepareStatement(INSERT_CITY_QUERY);
+            preparedStatement.setString(1, cityName);
+            preparedStatement.setInt(2, countryId);
+            preparedStatement.setInt(3, avgPopulation);
+            preparedStatement.executeUpdate();
+            preparedStatement.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
 
 }

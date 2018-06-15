@@ -8,9 +8,9 @@ import java.util.Optional;
 public class JdbcExample {
 
     private static final String AVG_POPULATION_QUERY =
-            "SELECT (SELECT name from COUNTRY WHERE id = country_id) AS country_name , AVG(avg_population) AS avg_population FROM CITY GROUP BY country_id";
+            "SELECT country.name AS country_name , AVG(avg_population) AS avg_population FROM CITY JOIN COUNTRY country ON CITY.country_id = COUNTRY.id GROUP BY country_id";
     private static final String AVG_POPULATION_HAVING_QUERY =
-            "SELECT (SELECT name from COUNTRY WHERE id = country_id) AS country_name , AVG(avg_population) AS avg_population FROM CITY GROUP BY country_id HAVING AVG(avg_population) > 1000000";
+            "SELECT country.name AS country_name , AVG(avg_population) AS avg_population FROM CITY JOIN COUNTRY country ON CITY.country_id = COUNTRY.id GROUP BY country_id HAVING AVG(avg_population) > 1000000";
 
     public static void main(String[] args) {
         Optional<Connection> connection = Database.prepareDatabase();
